@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">UC 客户端性能测试工具</string>
+    <string name="action_settings">Settings</string>
+    <string name="content"></string>
+    
+    <!--主界面按钮文字  -->
+    <string name="startTest">开始测试</string>
+    <string name="stopTest">停止测试</string>
+    <string name="upload">上传</string>
+    <string name="viewUploadRecode">查看</string>
+	
+    <!--操作界面按钮文字  -->
+    <string name="title">选择测试类型</string>
+    <string name="cpuMemMonitor">开始CPU内存监控</string>
+    <string name="batterMonitor">开始电量监控</string>
+    <string name="iowMonitor">开始IO监控</string>
+    <string name="netMonitor">开始流量监控</string>
+    <string name="userDescription">注意事项:\n\n 1. 完成监控后，一定要先去主界面点击“停止测试”按钮，以便关闭后台线程\n 2. 为避免干扰，请一次测试只监控一种数据</string>
+    
+    <!--上传界面文字  -->
+    <string name="upload_activity_title">一周上传记录</string>
+    
+</resources>

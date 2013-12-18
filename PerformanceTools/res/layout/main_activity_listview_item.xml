@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:layout_gravity="center_vertical" 
+    android:paddingLeft="8dp"
+    android:padding="6dp">
+    
+    <!-- padding属性，设置两个item的间距 
+    <RadioButton android:id="@+id/radioBtn"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"/>-->
+   	<RadioButton  
+        android:id="@+id/radiobutton"  
+        android:layout_width="48dp"  
+        android:layout_height="48dp"
+        android:focusable="false"
+        android:clickable="false"/>
+    
+    <ImageView 
+        android:id="@+id/appicon"
+    	android:layout_width="48dp"
+    	android:layout_height="48dp"
+    	android:contentDescription="@string/content"/>
+    
+    <LinearLayout android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="center_vertical"
+        android:paddingLeft="8dp">
+        
+        <TextView android:id="@+id/app_name"
+        	android:layout_width="wrap_content"
+        	android:layout_height="wrap_content"
+        	android:textStyle="bold"/>
+        
+        <TextView android:id="@+id/packge_name"
+        	android:layout_width="wrap_content"
+        	android:layout_height="wrap_content"
+        	android:textStyle="bold"/>       
+        
+    </LinearLayout>
+    
+</LinearLayout>
