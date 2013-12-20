@@ -76,7 +76,8 @@ public class MainActivity extends ListActivity {
 	
 	private String pkgName;
 	
-	private static final String UPLOAD_URL = "http://115.238.230.18:28043/Analysis/UploadServlet";
+	/* this url is Server url*/
+	private static final String UPLOAD_URL = "";
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +86,7 @@ public class MainActivity extends ListActivity {
 		
 		//show loading dialog
 		mDialog = new ProgressDialog(this);
-		mDialog.setMessage("ÕýÔÚ¼ÓÔØ±¾»ú½ø³ÌÐÅÏ¢£¬ÇëÉÔºó.....");
+		mDialog.setMessage("ï¿½ï¿½ï¿½Ú¼ï¿½ï¿½Ø±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ôºï¿½.....");
 		mDialog.setIndeterminate(false);
 		mDialog.setCancelable(false);
 		mDialog.show();		
@@ -155,7 +156,7 @@ public class MainActivity extends ListActivity {
 						notifyDBChange(uploadList);
 						
 						Looper.prepare();
-						Toast.makeText(getApplicationContext(), "ÉÏ´«ÎÄ¼þÍê±Ï.....!", Toast.LENGTH_LONG).show();
+						Toast.makeText(getApplicationContext(), "ï¿½Ï´ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½.....!", Toast.LENGTH_LONG).show();
 						Looper.loop();
 					}
 				});
