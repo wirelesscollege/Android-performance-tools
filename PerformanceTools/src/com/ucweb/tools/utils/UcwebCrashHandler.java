@@ -29,7 +29,7 @@ public class UcwebCrashHandler implements UncaughtExceptionHandler{
 	
 	private SimpleDateFormat format = UcwebDateUtil.YMDDateFormat.getYMDFormat();
 	
-	/**单例*/
+	/**锟斤拷锟斤拷*/
 	private UcwebCrashHandler(){}
 	private static class UcwebCrashHandlerHolder{
 		private static UcwebCrashHandler instance = new UcwebCrashHandler();
@@ -54,9 +54,9 @@ public class UcwebCrashHandler implements UncaughtExceptionHandler{
 		new Thread() {
 			@Override
 			public void run(){
-				//如果要在线程里面显示Toast，必须要用Looper
+				//锟斤拷锟斤拷要锟斤拷锟竭筹拷锟斤拷锟斤拷锟斤拷示Toast锟斤拷锟斤拷锟斤拷要锟斤拷Looper
 				Looper.prepare();
-				Toast.makeText(mContext, "抱歉，程序遇到异常，即将退出" + "\n" + "请联系作者：15-C2-3 杨如耀", Toast.LENGTH_LONG).show();
+				Toast.makeText(mContext, "I'm sorry, the app is crash, please contact author: zhy19870722@sina.com", Toast.LENGTH_LONG).show();
 				Looper.loop();
 			}
 		}.start();
@@ -99,7 +99,7 @@ public class UcwebCrashHandler implements UncaughtExceptionHandler{
 	@Override
 	public void uncaughtException(Thread thread, Throwable ex) {
 		if (!isExceptionHandled(ex) && mDefaultHanlder != null) {
-			//如果用户没有处理则让系统默认的异常处理器来处理
+			//锟斤拷锟斤拷锟矫伙拷没锟叫达拷锟斤拷锟斤拷锟斤拷系统默锟较碉拷锟届常锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷
 			mDefaultHanlder.uncaughtException(thread, ex);
 		} else {
 			try {
