@@ -107,7 +107,7 @@ public class IOWMonitor extends AbstractMonitor{
 				
 				infoBuffer.add(iowInfo);
 				if (infoBuffer.size() == 20) {
-					fileWriter.writeDatas(fileName, infoBuffer, UcwebFileUtils.FileStorageLocation.LOCATION_SDCARD);
+					fileWriter.writeFile(fileName, infoBuffer, UcwebFileUtils.FileLocation.SDCARD);
 					infoBuffer.clear();
 				}
 			} catch (IOException e) {

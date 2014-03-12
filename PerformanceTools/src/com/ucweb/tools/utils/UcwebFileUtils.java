@@ -36,55 +36,81 @@ public class UcwebFileUtils {
 		return sdcardStatus.equals(Environment.MEDIA_MOUNTED)? true : false;
 	}
 	
-	public static class FileStorageLocation{
-		/**path flag, use this flag, file will be save in sdcard*/
-		public static final int LOCATION_SDCARD = 1;
-		/**path flag, use this flag, file will be save in internal storage*/
-		public static final int LOCATION_LOCAL = 2;
+	/**file type*/
+	public static enum FileType {
+		CpuMemInfoFileType,
+		BatterInfoFileType,
+		NetInfoFileType,
+		IOWInfoFileType
 	}
 	
-	public static class FileType{
-		/**cpu memory monitor info*/
-		public static final int CpuMemInfoFileType = 1;
-		/**batter monitor info*/
-		public static final int BatterInfoFileType = 2;
-		/**net monitor info*/
-		public static final int NetInfoFileType = 3;
-		/**iowait monitor info*/
-		public static final int IOWInfoFileType = 4;
-	}
-	
-	public String generateFileName(int fileFlag, String pkgName){
-		String fileName = "";
+	/**根据文件类型，生成前缀名*/
+	public static String generateFileNamePrefix(FileType fileFlag) {
+		String fileTypeName;
 		switch (fileFlag) {
-		case FileType.CpuMemInfoFileType:
-			fileName = "MonitorInfo";
+		case CpuMemInfoFileType:
+			fileTypeName = "MonitorInfo";
 			break;
 			
-		case FileType.BatterInfoFileType:
-			fileName = "BatterInfo";
+		case BatterInfoFileType:
+			fileTypeName = "BatterInfo";
 			break;
 			
-		case FileType.NetInfoFileType:
-			fileName = "NetInfo";
+		case NetInfoFileType:
+			fileTypeName = "NetInfo";
 			break;
 			
-		case FileType.IOWInfoFileType:
-			fileName = "IOWInfo";
+		case IOWInfoFileType:
+			fileTypeName = "IOWInfo";
 			break;
 
 		default:
-			return null;
+			fileTypeName = "Unknown";
+			break;
 		}
+		
+		return fileTypeName;
+	}
+	
+	/**文件扩展名*/
+	private static final String FILE_EXTENSION = ".txt";
+	
+	/**获取文件扩展名*/
+	public static String getFileExtension() {
+		return FILE_EXTENSION;
+	}
+	
+	/**文件名分隔符*/
+	private static final String FILE_NAME_SEPARATION = "_";
+	
+	/**获取文件名分隔符*/
+	public static String getFileNameSeparation() {
+		return FILE_NAME_SEPARATION;
+	}
+	
+	/**生成文件名*/
+	public String generateFileName(FileType fileFlag, String pkgName){
+		//get file name prefix
+		final String fileNamePrefix = generateFileNamePrefix(fileFlag);		
 		//get phone model
 		final String PHONE_MODEL = UcwebPhoneInfoUtils.getPhoneModel();
-		//get date
+		//get current date
 		final String date = sDateFormat.format(new Date());
 
-		return fileName + "_" + pkgName + "_" + PHONE_MODEL + "_" + date + ".txt";
+		return fileNamePrefix + FILE_NAME_SEPARATION + pkgName + FILE_NAME_SEPARATION 
+				+ PHONE_MODEL + FILE_NAME_SEPARATION + date + getFileExtension();
 	}
-				
-	public <T> void writeDatas(String fileName, List<T> dataList, int flag) throws IOException{
+	
+	/**File save path*/
+	public static enum FileLocation {
+		/**save file in sdcard*/
+		SDCARD,
+		/**save file in internal storage*/
+		LOCAL
+	}
+	
+	/**写数据*/
+	public <T> void writeFile(String fileName, List<T> dataList, FileLocation position) throws IOException{
 		
 		StringBuilder sb = new StringBuilder(dataList.size());
 		for (T t : dataList) {
@@ -92,26 +118,29 @@ public class UcwebFileUtils {
 		}
 		
 		try {
-			writeSingleData(fileName, sb.toString(), flag);
+			writeFile(fileName, sb.toString(), position);
 		} catch (IOException e) {
 			throw new IOException(e);
 		}		
 	}
 	
-	public <T> void writeSingleData(String fileName, T data, int flag) throws IOException{		
+	/**写数据*/
+	public <T> void writeFile(String fileName, T data, FileLocation position) throws IOException{		
 		//is sdcard available?
 		if (isSdcardAvailable()) {
 			//sdcard available,judge save path, sdcard or internal storage?
-			switch (flag) {
-			case FileStorageLocation.LOCATION_SDCARD:				
+			switch (position) {
+			case SDCARD:				
 				try {
+					//write to sdcard
 					writeToSdcard(fileName, data);
 				} catch (IOException e) {
 					throw new IOException(e);
 				}
 				break;
-			case FileStorageLocation.LOCATION_LOCAL:
+			case LOCAL:
 				try {
+					//write to local
 					writeToInternalStorage(fileName, data);
 				} catch (Exception e) {
 					throw new IOException(e);
@@ -122,7 +151,7 @@ public class UcwebFileUtils {
 			}
 		} 
 		else {
-			//write to internal storage
+			//No sdcard available, ignore position, write to internal storage
 			try {
 				writeToInternalStorage(fileName, data);
 			} catch (Exception e) {
@@ -131,11 +160,67 @@ public class UcwebFileUtils {
 		}
 	}
 	
+	/**生成Sd卡文件路径*/
+	public static String generateSdcardFilePath() {
+		return Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator;
+	}
+	
+	/**生成本地文件路径*/
+	public String generateLocalFilePath() {
+		return mContext.getFilesDir().getPath() + File.separator;
+	}
+	
+	/**自动生成文件路径*/
+	public String autoGenerateFilePath() {
+		String path;
+		
+		if (isSdcardAvailable()) {
+			path = generateSdcardFilePath();
+		} else {
+			path = generateLocalFilePath();
+		}
+		
+		return path;
+	}
+	
+	public String generateFilePath(FileLocation location) {
+		String path;
+		
+		if (isSdcardAvailable()) {
+			//judge flag
+			switch (location) {
+			case SDCARD:
+				path = generateSdcardFilePath();
+				break;
+				
+			case LOCAL:
+				path = generateLocalFilePath();
+				break;
+				
+			default:
+				throw new IllegalArgumentException();
+			}
+		} else {
+			//ignore location flag, generate local file path
+			path = generateLocalFilePath();
+		}
+		return path;
+	}
+	
+	public static void deleteFile(String fileFullPath) {
+		File file = new File(fileFullPath);
+		if (file.exists() && file.isFile()) {
+			file.delete();
+		}
+	}
+	
 	private <T> void writeToSdcard(String fileName, T data) throws IOException{
 		FileOutputStream fos = null;
 		Log.d("UcwebFileUtils", "start write file to sdcard.......");
+		
 		try {
-			String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + fileName;
+			String path = generateSdcardFilePath() + fileName;
+			
 			fos = new FileOutputStream(path, true);
 			fos.write(data.toString().getBytes());
 		} catch (Exception e) {
@@ -143,9 +228,7 @@ public class UcwebFileUtils {
 		} finally {
 			try {
 				fos.close();
-			} catch (Exception ignore) {
-				
-			}			
+			} catch (Exception ignore) {}			
 		}
 	}
 	
@@ -154,6 +237,7 @@ public class UcwebFileUtils {
 		
 		try {
 			Log.d("UcwebFileUtils", "start write file to internal storage.......");
+			
 			fos = mContext.openFileOutput(fileName, Context.MODE_APPEND);
 			fos.write(data.toString().getBytes());
 		} catch (Exception e) {
@@ -161,9 +245,7 @@ public class UcwebFileUtils {
 		} finally {
 			try {
 				fos.close();
-			} catch (Exception ignore) {
-				
-			}			
+			} catch (Exception ignore) {}			
 		}
 	}
 	

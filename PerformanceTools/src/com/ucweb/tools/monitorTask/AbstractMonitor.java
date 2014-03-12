@@ -1,11 +1,9 @@
 package com.ucweb.tools.monitorTask;
 
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import android.content.Context;
-import android.os.Environment;
 
 import com.ucweb.tools.infobean.RecodeInfo;
 import com.ucweb.tools.utils.UcwebDateUtil;
@@ -14,11 +12,11 @@ import com.ucweb.tools.utils.UcwebInfoQueue;
 
 /***
  * 
- * ËùÓĞÏêÏ¸¼à¿ØÀà¸¸Àà£¬Ìá¹©ÁË´´½¨ÈÕÖ¾¼ÇÂ¼¡¢»ñÈ¡Log tag¡¢Ìí¼ÓÈÕÖ¾¼ÇÂ¼µ½¶ÓÁĞÄ£°å·½·¨
+ * Monitorableæ¥å£çš„ç›´æ¥å®ç°éª¨æ¶ç±»ï¼Œå…·ä½“ç›‘æ§ç±»éœ€è¦ä»è¯¥ç±»æ‰©å±•
  *
  */
 
-abstract class AbstractMonitor {
+abstract class AbstractMonitor implements Monitorable{
 	private Context mContext;
 	private final UcwebInfoQueue recodeInfoQueue;
 	
@@ -31,19 +29,14 @@ abstract class AbstractMonitor {
 	}
 	
 	/***
-	 * ´´½¨Èë¿â¼ÇÂ¼£¬ÒÔ±ãÌí¼Ó½ø¼ÇÂ¼¶ÓÁĞ
+	 * åˆ›å»ºå…¥åº“è®°å½•
 	 * @param fileName
 	 * @return
 	 */
 	protected RecodeInfo createRecode(String fileName){
 		RecodeInfo recodeInfo = new RecodeInfo();
 		
-		if (UcwebFileUtils.isSdcardAvailable()) {
-			recodeInfo.path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + fileName;
-		} else {
-			recodeInfo.path = mContext.getFilesDir().getPath() + File.separator + fileName;
-		}
-		
+		recodeInfo.path = new UcwebFileUtils(mContext).autoGenerateFilePath() + fileName;
 		recodeInfo.date = sdf.format(new Date());
 		recodeInfo.uploadFlag = RecodeInfo.UploadFlag.NOT_UPLOAD; 
 		
@@ -51,7 +44,7 @@ abstract class AbstractMonitor {
 	}
 	
 	/***
-	 * Ìí¼ÓÈë¿â¼ÇÂ¼µ½¶ÓÁĞ
+	 * æ·»åŠ è®°å½•åˆ°é˜Ÿåˆ—
 	 * @param info
 	 * @return
 	 */
@@ -60,20 +53,20 @@ abstract class AbstractMonitor {
 	}
 	
 	/***
-	 * »ñÈ¡ÈÕÖ¾Tag
+	 * è·å–Log tag
 	 * @return
 	 */
 	final protected String getLogTag(){
-		return this.getClass().getSimpleName();
+		return getClass().getSimpleName();
 	}
 	
 	/**
-	 * ¿ªÊ¼¼à¿Ø³éÏó·½·¨£¬ĞèÒª×ÓÀàÈ¥ÊµÏÖ
+	 * å¼€å§‹ç›‘æ§
 	 */
 	public abstract void startMonitor();
 	
 	/**
-	 * Í£Ö¹¼à¿Ø³éÏó·½·¨
+	 * åœæ­¢ç›‘æ§
 	 */
 	public abstract void stopMonitor();
 	

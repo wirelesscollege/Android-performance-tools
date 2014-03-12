@@ -29,7 +29,6 @@ public class UcwebCrashHandler implements UncaughtExceptionHandler{
 	
 	private SimpleDateFormat format = UcwebDateUtil.YMDDateFormat.getYMDFormat();
 	
-	/**����*/
 	private UcwebCrashHandler(){}
 	private static class UcwebCrashHandlerHolder{
 		private static UcwebCrashHandler instance = new UcwebCrashHandler();
@@ -54,9 +53,9 @@ public class UcwebCrashHandler implements UncaughtExceptionHandler{
 		new Thread() {
 			@Override
 			public void run(){
-				//����Ҫ���߳�������ʾToast������Ҫ��Looper
+				//如果要在线程里面显示Toast，必须要用Looper
 				Looper.prepare();
-				Toast.makeText(mContext, "I'm sorry, the app is crash, please contact author: zhy19870722@sina.com", Toast.LENGTH_LONG).show();
+				Toast.makeText(mContext, "抱歉，程序遇到异常，即将退出" + "\n" + "请联系作者：15-C2-3 杨如耀", Toast.LENGTH_LONG).show();
 				Looper.loop();
 			}
 		}.start();
@@ -83,13 +82,13 @@ public class UcwebCrashHandler implements UncaughtExceptionHandler{
 		printWriter.close();
 		sb.append(writer.toString());
 		
-		try {
-			String time = format.format(new Date());
-			String fileName = "crashLog-" + time + "-" + UcwebPhoneInfoUtils.getPhoneModel() + ".log";
-			
-			UcwebFileUtils fileWriter = new UcwebFileUtils(mContext);
-			
-			fileWriter.writeSingleData(fileName, sb, UcwebFileUtils.FileStorageLocation.LOCATION_SDCARD);
+		String time = format.format(new Date());
+		String fileName = "crashLog-" + time + "-" + UcwebPhoneInfoUtils.getPhoneModel() + ".log";
+		
+		UcwebFileUtils fileWriter = new UcwebFileUtils(mContext);
+		
+		try {			
+			fileWriter.writeFile(fileName, sb, UcwebFileUtils.FileLocation.SDCARD);
 			
 		} catch (Exception e) {
 			Log.e(LOG_TAG, "an error occured while writing file...", e);  
@@ -99,7 +98,7 @@ public class UcwebCrashHandler implements UncaughtExceptionHandler{
 	@Override
 	public void uncaughtException(Thread thread, Throwable ex) {
 		if (!isExceptionHandled(ex) && mDefaultHanlder != null) {
-			//�����û�û�д�������ϵͳĬ�ϵ��쳣������������
+			//如果用户没有处理则让系统默认的异常处理器来处理
 			mDefaultHanlder.uncaughtException(thread, ex);
 		} else {
 			try {

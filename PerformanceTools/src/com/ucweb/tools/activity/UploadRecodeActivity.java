@@ -26,7 +26,7 @@ public class UploadRecodeActivity extends Activity{
 	
 	private final static int MSG_TAG = 1;
 	
-	private final ExecutorService es = UcwebThreadPoolsManager.getInstance().getExecutorService();
+	private final ExecutorService es = UcwebThreadPoolsManager.getThreadPoolManager().getExecutorService();
 	
 	private ListView lv;
 	
@@ -40,7 +40,7 @@ public class UploadRecodeActivity extends Activity{
 		setContentView(R.layout.upload_recode_activity);
 		
 		mDialog = new ProgressDialog(this);
-		mDialog.setMessage("ÕıÔÚ¼ÓÔØÉÏ´«ĞÅÏ¢£¬ÇëÉÔºó.....");
+		mDialog.setMessage("æ­£åœ¨åŠ è½½ä¸€å‘¨ä¸Šä¼ è®°å½•ï¼Œè¯·ç¨å.....");
 		mDialog.setIndeterminate(false);
 		mDialog.setCancelable(false);
 		mDialog.show();
@@ -56,7 +56,6 @@ public class UploadRecodeActivity extends Activity{
 			@Override
 			public void run() {
 				List<Map<String, Object>> dataList = getData();
-				
 				Message msg = Message.obtain();
 				msg.what = MSG_TAG;
 				msg.obj = dataList;
@@ -81,16 +80,16 @@ public class UploadRecodeActivity extends Activity{
 		
 		@Override
 		public void handleMessage(Message msg){
-			
+			UploadRecodeActivity activity = mActivity.get();
 			switch (msg.what) {
 			
 			case MSG_TAG:
-				UploadRecodeActivity activity = mActivity.get();
-				if (activity != null) {					
-					activity.mDialog.dismiss();	
+				if (activity != null) {
+					activity.mDialog.dismiss();
 					
 					@SuppressWarnings("unchecked")
 					List<HashMap<String, Object>> infoList = (List<HashMap<String, Object>>) msg.obj;
+					
 					SimpleAdapter adapter = new SimpleAdapter(activity, infoList, 
 							R.layout.upload_recode_activity_item, 
 							new String[] {"TAG_PATH", "TAG_DATE", "TAG_IS_UPLOADED"}, 
@@ -105,7 +104,7 @@ public class UploadRecodeActivity extends Activity{
 
 			default:
 				break;
-			}
+			}	
 			super.handleMessage(msg);
 		}
 		
@@ -116,7 +115,7 @@ public class UploadRecodeActivity extends Activity{
 		
 		//get recently week upload info
 		Cursor c = dbManager.queryData();;
-		try {								
+		try {			
 			while(c.moveToNext()) {
 				
 				Map<String, Object> data = new HashMap<String, Object>(4);
@@ -128,21 +127,21 @@ public class UploadRecodeActivity extends Activity{
 				switch (uploadFlag) {
 				
 					case UploadFlag.NOT_UPLOAD:
-						data.put("TAG_PATH", "ÎÄ¼şÂ·¾¶: " + path);
-						data.put("TAG_DATE", "ÈÕÆÚ: " + date);
-						data.put("TAG_IS_UPLOADED", "ÉÏ´«×´Ì¬£ºÎ´ÉÏ´«");
+						data.put("TAG_PATH", "æ–‡ä»¶è·¯å¾„: " + path);
+						data.put("TAG_DATE", "æ—¥æœŸ: " + date);
+						data.put("TAG_IS_UPLOADED", "ä¸Šä¼ çŠ¶æ€ï¼šæœªä¸Šä¼ ");
 						break;
 						
 					case UploadFlag.UPLOAD_FAILED:
-						data.put("TAG_PATH", "ÎÄ¼şÂ·¾¶: " + path);
-						data.put("TAG_DATE", "ÉÏ´«ÈÕÆÚ: " + date);
-						data.put("TAG_IS_UPLOADED", "ÉÏ´«×´Ì¬£ºÉÏ´«Ê§°Ü");
+						data.put("TAG_PATH", "æ–‡ä»¶è·¯å¾„: " + path);
+						data.put("TAG_DATE", "æ—¥æœŸ: " + date);
+						data.put("TAG_IS_UPLOADED", "ä¸Šä¼ çŠ¶æ€ï¼šä¸Šä¼ å¤±è´¥");
 						break;
 						
 					case UploadFlag.UPLOADED:
-						data.put("TAG_PATH", "ÎÄ¼şÂ·¾¶: " + path);
-						data.put("TAG_DATE", "ÉÏ´«ÈÕÆÚ: " + date);
-						data.put("TAG_IS_UPLOADED", "ÉÏ´«×´Ì¬£ºÒÑÉÏ´«");
+						data.put("TAG_PATH", "æ–‡ä»¶è·¯å¾„: " + path);
+						data.put("TAG_DATE", "æ—¥æœŸ: " + date);
+						data.put("TAG_IS_UPLOADED", "ä¸Šä¼ çŠ¶æ€ï¼šå·²ä¸Šä¼ ");
 						break;
 					default:
 						break;

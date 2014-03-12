@@ -1,9 +1,9 @@
 package com.ucweb.tools.monitorTask;
 
 public class MonitorProxy{
-	private final AbstractMonitor mMonitor;
+	private final Monitorable mMonitor;
 	
-	public MonitorProxy(AbstractMonitor monitor){
+	public MonitorProxy(Monitorable monitor){
 		mMonitor = monitor;
 	}
 

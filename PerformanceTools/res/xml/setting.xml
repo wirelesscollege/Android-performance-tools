@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" 
+    android:title="设置">
+    
+    <PreferenceCategory 
+        android:title="猴子测试">
+        <CheckBoxPreference 
+            android:key="monkeySetting"
+            android:title="勾选开启猴子测试"
+            android:summaryOn="已开启猴子测试"
+            android:summaryOff="已关闭猴子测试"
+            android:defaultValue="false"/>
+        
+        <EditTextPreference 
+            android:key="monkeySleepTime"
+            android:title="Monkey睡眠时间"
+            android:defaultValue="30"/>
+        
+    </PreferenceCategory>
+    
+</PreferenceScreen>

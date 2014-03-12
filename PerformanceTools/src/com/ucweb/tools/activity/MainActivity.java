@@ -7,11 +7,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import com.ucweb.tools.config.Config;
 import com.ucweb.tools.db.UcwebDBManager;
 import com.ucweb.tools.infobean.AppInfo;
 import com.ucweb.tools.infobean.RecodeInfo;
 import com.ucweb.tools.service.MonitorService;
 import com.ucweb.tools.utils.UcwebAppUtil;
+import com.ucweb.tools.utils.UcwebFileUtils;
 import com.ucweb.tools.utils.UcwebInfoQueue;
 import com.ucweb.tools.utils.UcwebNetUtils;
 import com.ucweb.tools.utils.UcwebThreadPoolsManager;
@@ -19,7 +21,6 @@ import com.ucweb.tools.R;
 
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.annotation.SuppressLint;
 import android.app.ListActivity;
@@ -30,6 +31,7 @@ import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -44,12 +46,19 @@ import android.widget.Toast;
 
 public class MainActivity extends ListActivity {
 	//msg tag
-	private static final int MSG_TAG = 1;
+	private static final int MSG_UPDATE_UI = 1;
+	//show tips msg tag
+	private static final int MSG_TAG_SHOW_TIPS = 2;
+	//tips flag, 1 means upload success
+	private static final int UPLOAD_SUCCESS = 1;
+	//tips flag, 2 means no file need to upload
+	private static final int NO_FILE_NEED_TO_UPLOAD = 2;
 	
+	//Log tag
 	private final String LOG_TAG = MainActivity.class.getSimpleName();
 	
 	//thread pool
-	private final UcwebThreadPoolsManager threadPoolManager = UcwebThreadPoolsManager.getInstance();
+	private final UcwebThreadPoolsManager threadPoolManager = UcwebThreadPoolsManager.getThreadPoolManager();
 	private ExecutorService mExecutor;
 	
 	//db manager
@@ -76,9 +85,6 @@ public class MainActivity extends ListActivity {
 	
 	private String pkgName;
 	
-	/* this url is Server url*/
-	private static final String UPLOAD_URL = "";
-	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -86,7 +92,7 @@ public class MainActivity extends ListActivity {
 		
 		//show loading dialog
 		mDialog = new ProgressDialog(this);
-		mDialog.setMessage("���ڼ��ر���������Ϣ�����Ժ�.....");
+		mDialog.setMessage("正在加载手机应用信息，请稍后.....");
 		mDialog.setIndeterminate(false);
 		mDialog.setCancelable(false);
 		mDialog.show();		
@@ -104,7 +110,7 @@ public class MainActivity extends ListActivity {
 				ArrayList<HashMap<String, Object>> mLoadDataList = getData();
 				
 				Message msg = Message.obtain();
-				msg.what = MSG_TAG;
+				msg.what = MSG_UPDATE_UI;
 				msg.obj = mLoadDataList;
 				MainActivity.this.mHandler.sendMessage(msg);
 			}
@@ -153,11 +159,16 @@ public class MainActivity extends ListActivity {
 						//upload file
 						List<RecodeInfo> uploadList = upload();
 						//insert data into db
-						notifyDBChange(uploadList);
+						Message msg = Message.obtain();
+						msg.what = MSG_TAG_SHOW_TIPS;
 						
-						Looper.prepare();
-						Toast.makeText(getApplicationContext(), "�ϴ��ļ�����.....!", Toast.LENGTH_LONG).show();
-						Looper.loop();
+						if (uploadList != null) {
+							notifyDBChange(uploadList);
+							msg.arg1 = UPLOAD_SUCCESS;
+						} else {
+							msg.arg1 = NO_FILE_NEED_TO_UPLOAD;
+						}			
+						MainActivity.this.mHandler.sendMessage(msg);
 					}
 				});
 			}
@@ -175,6 +186,7 @@ public class MainActivity extends ListActivity {
 		});
 	}
 	
+	//loading app info, and show on main activity
 	private ArrayList<HashMap<String, Object>> getData(){
 		ArrayList<HashMap<String, Object>> dataList = new ArrayList<HashMap<String,Object>>(32);
 		
@@ -194,6 +206,7 @@ public class MainActivity extends ListActivity {
 		return dataList;
 	}
 	
+	//upload file
 	private List<RecodeInfo> upload(){
 		//get info queue instance
 		final UcwebInfoQueue infoQueue = UcwebInfoQueue.getInstance();
@@ -208,9 +221,11 @@ public class MainActivity extends ListActivity {
 		while (recodeInfo != null) {
 			try {
 				//upload file
-				UcwebNetUtils.uploadFile(UPLOAD_URL, "file", recodeInfo.path);
+				UcwebNetUtils.uploadFile(Config.UPLOAD_URL, "file", recodeInfo.path);
 				//upload success, update uploadFlag to UPLOADED
 				recodeInfo.uploadFlag = RecodeInfo.UploadFlag.UPLOADED;
+				//delete file
+				UcwebFileUtils.deleteFile(recodeInfo.path);
 				Log.d(LOG_TAG, "upload success");
 			} catch (IOException e) {
 				//occur exception ,upload file failed, and update uploadFlag to UPLOAD_FAILED
@@ -224,19 +239,40 @@ public class MainActivity extends ListActivity {
 		return infoList;
 	}
 	
+	//update DB
 	private void notifyDBChange(List<RecodeInfo> list){
 		//insert recode info into DB
-		if (list != null) {
-			for (RecodeInfo recodeInfo : list) {
-				dbManager.insertData(recodeInfo);
-			}
+		for (RecodeInfo recodeInfo : list) {
+			dbManager.insertData(recodeInfo);
 		}
 	}
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		getMenuInflater().inflate(R.menu.main, menu);
-		return true;
+		
+		menu.add(0, 1, 0, "设置");
+		menu.add(0, 2, 0, "关于");
+		
+		return super.onCreateOptionsMenu(menu);
+	}
+	
+	@Override
+	public boolean onMenuItemSelected(int featureId, MenuItem item) {
+		
+		switch (item.getItemId()) {
+		case 1:
+			startActivity(new Intent(this, SettingActivity.class));
+			break;
+			
+		case 2:
+			Toast.makeText(getApplicationContext(), "还没有写内容，呵呵！", Toast.LENGTH_LONG).show();
+			break;
+
+		default:
+			break;
+		}
+		
+		return super.onMenuItemSelected(featureId, item);
 	}
 	
 	@Override
@@ -268,11 +304,11 @@ public class MainActivity extends ListActivity {
 		
 		@Override
 		public void handleMessage(Message msg){
+			MainActivity activity = mActivity.get();
 			
-			switch (msg.what) {
-			
-			case MSG_TAG:
-				MainActivity activity = mActivity.get();
+			switch (msg.what) {		
+			case MSG_UPDATE_UI:
+				
 				if (activity != null) {					
 					activity.mDialog.dismiss();	
 					
@@ -282,7 +318,14 @@ public class MainActivity extends ListActivity {
 					activity.setListAdapter(activity.adapter);
 					}
 				break;
-
+			
+			case MSG_TAG_SHOW_TIPS:
+				if (msg.arg1 == UPLOAD_SUCCESS) {
+					Toast.makeText(activity.getApplicationContext(), "上传记录成功", Toast.LENGTH_SHORT).show();
+				} else {
+					Toast.makeText(activity.getApplicationContext(), "没有记录需要上传或已经上传", Toast.LENGTH_SHORT).show();
+				}
+				break;
 			default:
 				break;
 			}

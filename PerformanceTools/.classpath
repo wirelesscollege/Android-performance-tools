@@ -7,5 +7,6 @@
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
 	<classpathentry exported="true" kind="lib" path="C:/Users/Administrator/Desktop/jars/httpclient/httpclient-4.2.5.jar"/>
 	<classpathentry exported="true" kind="lib" path="C:/Users/Administrator/Desktop/jars/httpclient/httpmime-4.2.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/Users/Administrator/Desktop/jars/json-lib/json-org.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

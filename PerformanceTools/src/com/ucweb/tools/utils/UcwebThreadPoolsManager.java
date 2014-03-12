@@ -3,6 +3,8 @@ package com.ucweb.tools.utils;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.ucweb.tools.config.Config;
+
 import android.util.Log;
 
 public final class UcwebThreadPoolsManager {
@@ -12,11 +14,9 @@ public final class UcwebThreadPoolsManager {
 	private static UcwebThreadPoolsManager manager;
 	private UcwebThreadPoolsManager(){}
 	
-	private static final int MAX_POOL_SIZE = 3;
-	
 	private ExecutorService mService = null;
 	
-	public static UcwebThreadPoolsManager getInstance(){
+	public static UcwebThreadPoolsManager getThreadPoolManager(){
 		if (manager == null) {
 			synchronized (UcwebThreadPoolsManager.class) {
 				if (manager == null) {
@@ -26,10 +26,10 @@ public final class UcwebThreadPoolsManager {
 		}
 		return manager;
 	}
-	
+
 	public void init(){
 		Log.d(LOG_TAG, "init thread pool........");
-		mService = Executors.newFixedThreadPool(MAX_POOL_SIZE);
+		mService = Executors.newFixedThreadPool(Config.MAX_POOL_SIZE);
 	}
 	
 	public boolean isThreadPoolAlive(){

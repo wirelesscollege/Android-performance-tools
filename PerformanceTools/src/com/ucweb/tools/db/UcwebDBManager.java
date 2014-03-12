@@ -42,19 +42,23 @@ public class UcwebDBManager {
 	}
 	
 	public void insertData(RecodeInfo info){
-		db.beginTransaction();
-		try {
-			db.execSQL("INSERT INTO T_UPLOAD_RECODE VALUES(null, ?, ?, ?)", new Object[]{info.path, info.date, info.uploadFlag});
-			db.setTransactionSuccessful();
-		} finally {
-			db.endTransaction();
+		synchronized (this) {
+			db.beginTransaction();
+			try {
+				db.execSQL("INSERT INTO T_UPLOAD_RECODE VALUES(null, ?, ?, ?)", new Object[]{info.path, info.date, info.uploadFlag});
+				db.setTransactionSuccessful();
+			} finally {
+				db.endTransaction();
+			}
 		}
 	}
 	
 	public void updateUploadStatus(RecodeInfo info){
-		ContentValues cv = new ContentValues();
-		cv.put("isUploaded", info.uploadFlag);
-		db.update(helper.TABLE_NAME	, cv, "path = ? and date = ?", new String[]{info.path, info.date});
+		synchronized (this) {
+			ContentValues cv = new ContentValues();
+			cv.put("isUploaded", info.uploadFlag);
+			db.update(helper.TABLE_NAME	, cv, "path = ? and date = ?", new String[]{info.path, info.date});
+		}
 	}
 	
 	public void deleteOldDatas(){
@@ -68,7 +72,9 @@ public class UcwebDBManager {
 	
 	
 	public Cursor queryData(){
-		return db.rawQuery(getLatestWeekUploadRecode, null);
+		synchronized (this) {
+			return db.rawQuery(getLatestWeekUploadRecode, null);
+		}
 	}
 	
 	public void closeDB(){

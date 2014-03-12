@@ -9,7 +9,7 @@ public class UcwebInfoQueue {
 	
 	private final ConcurrentLinkedQueue<RecodeInfo> recodeInfoQueue;
 	
-	private volatile static UcwebInfoQueue infoQueue = null;
+	private static UcwebInfoQueue infoQueue = null;
 	private UcwebInfoQueue(){
 		recodeInfoQueue = new ConcurrentLinkedQueue<RecodeInfo>();
 	}

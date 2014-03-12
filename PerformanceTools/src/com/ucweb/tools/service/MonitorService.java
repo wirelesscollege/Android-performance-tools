@@ -17,7 +17,7 @@ import android.os.IBinder;
 
 public class MonitorService extends Service{
 	
-	private final UcwebThreadPoolsManager manager = UcwebThreadPoolsManager.getInstance();
+	private final UcwebThreadPoolsManager manager = UcwebThreadPoolsManager.getThreadPoolManager();
 	private final ExecutorService executor = manager.getExecutorService();
 	
 	private final String[] cmds = {"top", "-m", "5", "-n", "1"};
@@ -45,7 +45,7 @@ public class MonitorService extends Service{
 		
 		case MonitorType.MONITOR_TYPE_CPUMEM:
 			CpuMemMonitor cpuMemMonitor = new CpuMemMonitor.Builder(getApplicationContext()).
-														setMonitorIntervalSeconds(10).setMonitorPkg(pkgName).build();
+														setMonitorIntervalSeconds(5).setMonitorPkg(pkgName).build();
 			mProxy = new MonitorProxy(cpuMemMonitor);
 			executor.execute(new Runnable() {
 				

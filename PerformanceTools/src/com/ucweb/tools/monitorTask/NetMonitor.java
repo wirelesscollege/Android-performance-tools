@@ -80,7 +80,7 @@ public class NetMonitor extends AbstractMonitor{
 			
 			if (buffer.size() == 6) {
 				try {
-					mFileWriter.writeDatas(fileName, buffer, UcwebFileUtils.FileStorageLocation.LOCATION_SDCARD);
+					mFileWriter.writeFile(fileName, buffer, UcwebFileUtils.FileLocation.SDCARD);
 				} catch (IOException e) {
 					Log.d(LOG_TAG, e.toString());
 				}
@@ -96,7 +96,7 @@ public class NetMonitor extends AbstractMonitor{
 		if (!buffer.isEmpty()) {
 			try {
 				Log.d(LOG_TAG, "write buffer");
-				mFileWriter.writeDatas(fileName, buffer, UcwebFileUtils.FileStorageLocation.LOCATION_SDCARD);
+				mFileWriter.writeFile(fileName, buffer, UcwebFileUtils.FileLocation.SDCARD);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -109,14 +109,14 @@ public class NetMonitor extends AbstractMonitor{
 	}
 	
 	private int[] getTrafficChangeBytes(int uid){
-		int[] bytesArray1 = mAppUtils.getAppTrafficByUid(uid);
+		int[] bytesArray1 = mAppUtils.getAppTraffic(uid);
 		
 		try {
 			TimeUnit.SECONDS.sleep(5);
 		} catch (Exception e) {
 			Log.d(LOG_TAG, e.toString());
 		}
-		int[] bytesArray2 = mAppUtils.getAppTrafficByUid(uid);
+		int[] bytesArray2 = mAppUtils.getAppTraffic(uid);
 		
 		if (bytesArray1 != null && bytesArray2 != null) {
 			return new int[]{bytesArray2[INDEX_TOTAL_BYTES_IN_KB] - bytesArray1[INDEX_TOTAL_BYTES_IN_KB], 

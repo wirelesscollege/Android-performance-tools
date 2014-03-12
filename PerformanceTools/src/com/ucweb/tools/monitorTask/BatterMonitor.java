@@ -48,7 +48,7 @@ public class BatterMonitor extends AbstractMonitor{
 		mFileName = fileWriter.generateFileName(UcwebFileUtils.FileType.BatterInfoFileType, 
 				pkgName == null? "Unknown" : pkgName);
 		
-		executor = UcwebThreadPoolsManager.getInstance().getExecutorService();
+		executor = UcwebThreadPoolsManager.getThreadPoolManager().getExecutorService();
 		
 		sdf = UcwebDateUtil.YMDHMSDateFormat.getYMDHMSFormat();
 		
@@ -97,7 +97,7 @@ public class BatterMonitor extends AbstractMonitor{
 						sb.append(date + "|" + String.format(Locale.CHINA, "%.1f", batter) + "|" + String.valueOf(temperature) + "\n");
 						
 						try {
-							fileWriter.writeSingleData(mFileName, sb.toString(), UcwebFileUtils.FileStorageLocation.LOCATION_SDCARD);
+							fileWriter.writeFile(mFileName, sb.toString(), UcwebFileUtils.FileLocation.SDCARD);
 							
 						} catch (IOException e) {
 							e.printStackTrace();
