@@ -6,45 +6,36 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-
-
 import java.util.concurrent.TimeUnit;
 
-import com.ucweb.tools.infobean.RecodeInfo;
 import com.ucweb.tools.utils.UcwebAppUtil;
 import com.ucweb.tools.utils.UcwebCommonTools;
 import com.ucweb.tools.utils.UcwebDateUtil;
-import com.ucweb.tools.utils.UcwebFileUtils;
-import com.ucweb.tools.utils.UcwebFileUtils.FileLocation;
+import com.ucweb.tools.utils.UcwebFileUtils.FileType;
 
 import android.content.Context;
 import android.util.Log;
 
 public class CpuMemMonitor extends AbstractMonitor{
-	
-	private static final int INDEX_DATE = 0;
-	private static final int INDEX_MEM_USE = 1;
-	private static final int INDEX_CPU_USE = 2;
-	
+
 	private static final String[] cmds = {"top", "-m", "1"};
-	
-	private boolean mStopMonitor;
 	
 	private Context mContext;
 	
+	/**监控间隔*/
 	private int monitorInterval;
 		
 	private final UcwebAppUtil appUtil;
 	
-	private UcwebFileUtils fileWriter;
-	
+	/**日期格式*/
 	private final DecimalFormat format;
 	
+	/**包名*/
 	private final String mPkgName;
 	
-	private final ArrayList<String[]> infoBuffer = new ArrayList<String[]>();
+	/**监控文件保存路径*/
+	private final String mFileSavePath;
 	
 	private static String LOG_TAG;
 	
@@ -58,6 +49,8 @@ public class CpuMemMonitor extends AbstractMonitor{
 		private static final int DEFAULT_MONITOR_INTERVAL = 10;
 		
 		private int monitorInterval;
+		
+		private String filePath;
 		
 		public Builder(Context context){
 			mContext = context;
@@ -74,6 +67,11 @@ public class CpuMemMonitor extends AbstractMonitor{
 			return this;
 		}
 		
+		public Builder setFileSavePath(String filePath){
+			this.filePath = filePath;
+			return this;
+		}
+		
 		public CpuMemMonitor build() {
 			return new CpuMemMonitor(this);
 		}
@@ -85,6 +83,7 @@ public class CpuMemMonitor extends AbstractMonitor{
 		mPkgName = builder.mPkgName;
 		mStopMonitor = false;
 		monitorInterval = builder.monitorInterval;
+		mFileSavePath = builder.filePath;
 		
 		LOG_TAG = getLogTag();
 		appUtil = new UcwebAppUtil(mContext);
@@ -94,26 +93,23 @@ public class CpuMemMonitor extends AbstractMonitor{
 		format.setMaximumFractionDigits(2);
 		format.setMinimumFractionDigits(2);
 	}
-
+	
+	/**是否暂停监控线程的标志*/
+	private boolean mStopMonitor;
+	
 	public void stopCpuMonitor(){
 		mStopMonitor = true;
 	}
 	
 	@Override
 	public void startMonitor() {
-		
-		fileWriter = new UcwebFileUtils(mContext);
-		String fileName = fileWriter.generateFileName(UcwebFileUtils.FileType.CpuMemInfoFileType, 
-				mPkgName == null? "Unknown" : mPkgName);
-		
-		RecodeInfo recodeInfo = createRecode(fileName);
-
-		doLoop(fileName);
+		String fileName = createFileName(FileType.CpuMemInfoFileType, mPkgName);
+		Log.d(getLogTag(), "写的文件全路径:" + mFileSavePath + fileName);
+		doMonitorLoop(createFileFullPath(mFileSavePath, fileName));
 	
-		addInQueue(recodeInfo);
 	}
 	
-	private final void doLoop(String fileName) {
+	private final void doMonitorLoop(String fileFullPath) {
 		final String pid = String.valueOf(appUtil.getRunningAppPid(mPkgName));
 		
 		InputStream is = null;
@@ -121,11 +117,11 @@ public class CpuMemMonitor extends AbstractMonitor{
 		
 		final Runtime runTime = Runtime.getRuntime();
 		Process process = null;
-
+		
 		try {
 			process = runTime.exec(cmds);
 		}catch (IOException e) {
-			e.printStackTrace();
+			Log.e(LOG_TAG, e.getMessage());
 			return;
 		}
 			
@@ -141,12 +137,27 @@ public class CpuMemMonitor extends AbstractMonitor{
 				temp = br.readLine();
 			} catch (IOException e) {
 				e.printStackTrace();
+
+				try {
+					TimeUnit.MILLISECONDS.sleep(10);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+
 				continue;
 			}
 			
 			/**如果为空，重新读一条*/
-			if(temp == null) 
+			if(temp == null) {
+				try {
+					TimeUnit.MILLISECONDS.sleep(10);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				continue;
+			}
 
 			if (temp.contains(pid) && temp.contains(mPkgName)) {
 				/**获取的字符串必须先去掉首尾空格才split*/
@@ -154,13 +165,18 @@ public class CpuMemMonitor extends AbstractMonitor{
 				
 				/**cpu信息字段*/
 				String cpuInfo = values[2].split("%")[0];
+				if(!isCpuInfoValid(cpuInfo)) {
+					/**针对狗日的小米手机，取出的CPU信息偶尔会不对，那么直接抛掉这次取的数据*/
+					continue;
+				}
+				
 				/**RSS字段*/
 				String RSS = values[6].split("K")[0];
 				
 				/***当前日期*/
 				String now = sdf.format(new Date());
 				
-				infoBuffer.add(new String[] {now, UcwebCommonTools.convertKB2MB(RSS), cpuInfo});
+				addInBuffer(makeOutputStyle(now, UcwebCommonTools.convertKB2MB(RSS), cpuInfo));
 				
 			} else {
 				/**读出的东西不是想要的，重新读一条*/
@@ -173,16 +189,25 @@ public class CpuMemMonitor extends AbstractMonitor{
 					e.printStackTrace();
 			}
 			
-			writeFileWhenBufferReachMaxCount(fileName, 10);
+			writeFileWhenBufferReachMaxCount(fileFullPath, 10);
 		}
 		
 		/**结束测试后，刷新buffer，把buffer剩余数据写到文件*/
-		flushBuffer(fileName, infoBuffer);
+		flushBufferAndWriteFile(fileFullPath);
 		
 		/**释放资源*/
 		closeInputStream(is);
 		closeBufferReader(br);
 		destroyProcess(process);
+	}
+	
+	private final boolean isCpuInfoValid(String cpuInfo) {
+		Integer c = Integer.valueOf(cpuInfo);
+		return c >= 0 && c <= 100;
+	}
+	
+	private final String makeOutputStyle(String date, String memUseage, String cpuUseage) {
+		return date + "|" + memUseage + "|" + cpuUseage + "\n";
 	}
 	
 	private void closeInputStream(InputStream in) {
@@ -212,45 +237,10 @@ public class CpuMemMonitor extends AbstractMonitor{
 			e.printStackTrace();
 		}	
 	}
-	
-	private void writeFileWhenBufferReachMaxCount(String fileName, int maxBufferCount) {
-		if (infoBuffer.size() >= maxBufferCount) {				
-			StringBuilder sb = new StringBuilder(320);
-			
-			for (String[] temp : infoBuffer) {
-				sb.append(temp[INDEX_DATE] + "|" + temp[INDEX_MEM_USE] + "|" + temp[INDEX_CPU_USE] + "\n");
-			}
-				
-			try {
-				fileWriter.writeFile(fileName, sb.toString(), FileLocation.SDCARD);
-			} catch (IOException e) {
-				Log.d(LOG_TAG, "write CpuMemMonitor file, below is exception message:\n" + e.getMessage());
-			}
-			
-			sb = null;
-			infoBuffer.clear();
-		}
-	}
 
 	@Override
 	public void stopMonitor() {
 		stopCpuMonitor();
-	}
-	
-	private void flushBuffer(String fileName, ArrayList<String[]> buffer){
-		if (!buffer.isEmpty()) {
-			StringBuilder sb = new StringBuilder(320);
-			
-			for (String[] temp : buffer) {
-				sb.append(temp[INDEX_DATE] + "|" + temp[INDEX_MEM_USE] + "|" + temp[INDEX_CPU_USE] + "\n");
-			}
-							
-			try {
-				fileWriter.writeFile(fileName, sb.toString(), FileLocation.SDCARD);
-			} catch (IOException e) {
-				Log.d(LOG_TAG, "write CpuMemMonitor file, below is exception message:\n" + e.getMessage());
-			}
-		}
 	}
 	
 }

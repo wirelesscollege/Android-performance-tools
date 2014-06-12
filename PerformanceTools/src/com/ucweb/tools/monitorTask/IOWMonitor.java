@@ -5,120 +5,157 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.ucweb.tools.infobean.RecodeInfo;
 import com.ucweb.tools.utils.UcwebDateUtil;
-import com.ucweb.tools.utils.UcwebFileUtils;
+import com.ucweb.tools.utils.UcwebFileUtils.FileType;
 
 import android.content.Context;
 import android.util.Log;
 
 public class IOWMonitor extends AbstractMonitor{
 	
-	private final String LOG_TAG;
-	
 	private boolean mStopMonitor;
-	private Context mContext;
 	
 	private String[] mCmd;
-			
-	private UcwebFileUtils fileWriter;
+	
+	private final String mFileSavePath;
 	
 	private String mPkgName;
 	
-	private final List<String> infoBuffer;
-	
 	private final SimpleDateFormat sdf;
 	
-	public IOWMonitor(Context context, String pkgName, String[] cmd){
+	public IOWMonitor(Context context, String fileSavePath, String pkgName, String[] cmd){
 		super(context);
 		
-		LOG_TAG = getLogTag();
-		
-		this.mContext = context;
+		mFileSavePath = fileSavePath;
 		mStopMonitor = false;
 		mPkgName = pkgName;
 		mCmd = cmd;
 		
 		sdf = UcwebDateUtil.YMDHMSDateFormat.getYMDHMSFormat();
-
-		infoBuffer = new ArrayList<String>(20);
 	}
 	
 	public void stopIOWMonitor(){
 		mStopMonitor = true;
 	}
 	
-	private String getIOWInfo() throws IOException{
-		/**get CPU and Memory size*/
-		InputStream is = null;
-		BufferedReader  br = null;
-		
-		try {
-			TimeUnit.SECONDS.sleep(5);
-		} catch (Exception e) {
-			Log.e("Johnny", e.toString());
-		}
-		try {
-			Runtime runTime = Runtime.getRuntime();
-			Process process = runTime.exec(mCmd);
-			is = process.getInputStream();
-			br = new BufferedReader(new InputStreamReader(is));
-			
-			StringBuilder result = new StringBuilder(60);
-			
-			String temp = null;
-			while ((temp = br.readLine()) != null) {
-				if (temp.contains("System") && temp.contains("IOW")) {
-					String iow = temp.split(", ")[2].trim();
-					result.append(sdf.format(new Date()) + "|" + iow + "\n");
-				}
-			}
-			return result.toString();
-		} catch (Exception e) {
-			throw new IOException("A erroc Accour while execute command: " + e.getMessage());
-		} finally {
-			try {
-				is.close();
-			} catch (Exception ignore) {}
-			
-			try {
-				br.close();
-			} catch (Exception ignore) {}
-		}	
-	}
-	
 	@Override
 	public void startMonitor() {
 		
-		fileWriter = new UcwebFileUtils(mContext);
-		String fileName = fileWriter.generateFileName(UcwebFileUtils.FileType.IOWInfoFileType, 
-				mPkgName == null? "Unknown" : mPkgName);
-		RecodeInfo info = createRecode(fileName);
+		String fileName = createFileName(FileType.IOWInfoFileType, mPkgName);
+		
+		doMonitorLoop(createFileFullPath(mFileSavePath, fileName));
+	}	
+	
+	private final void doMonitorLoop(String fileFullPath) {
+		
+		InputStream is = null;
+		BufferedReader  br = null;
+		
+		final Runtime runTime = Runtime.getRuntime();
+		Process process = null;
+		
+		try {
+			process = runTime.exec(mCmd);
+		}catch (IOException e) {
+			Log.e(getLogTag(), e.getMessage());
+			return;
+		}
+			
+		is = process.getInputStream();
+			
+		String temp = null;
+			
+		br = new BufferedReader(new InputStreamReader(is));
+		
 		
 		while (!mStopMonitor) {
 			try {
-				String iowInfo = getIOWInfo();
-//				Log.d(LOG_TAG, iowInfo);
-				
-				infoBuffer.add(iowInfo);
-				if (infoBuffer.size() == 20) {
-					fileWriter.writeFile(fileName, infoBuffer, UcwebFileUtils.FileLocation.SDCARD);
-					infoBuffer.clear();
-				}
+				temp = br.readLine();
 			} catch (IOException e) {
-				Log.d(LOG_TAG, "write CpuMemMonitor file, below is exception message:\n" + e.getMessage());				
+				e.printStackTrace();
+				try {
+					TimeUnit.MILLISECONDS.sleep(10);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+				continue;
 			}
-		}
-		addInQueue(info);
-	}	
+		
+			/**如果为空，重新读一条*/
+			if(temp == null) {
+				try {
+					TimeUnit.MILLISECONDS.sleep(10);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+				continue;
+			}
 
+			if (temp.contains("System") && temp.contains("IOW")) {
+				String iow = temp.split(", ")[2].trim();
+				addInBuffer(makeOutputStyle(sdf.format(new Date()), iow));
+			}else {
+				/**读出的东西不是想要的，重新读一条*/
+				continue;			
+			}
+			
+			try {
+				TimeUnit.SECONDS.sleep(5);
+				} catch (Exception e) {
+					e.printStackTrace();
+			}
+			
+			writeFileWhenBufferReachMaxCount(fileFullPath, 10);
+		}
+		
+		/**结束测试后，刷新buffer，把buffer剩余数据写到文件*/
+		flushBufferAndWriteFile(fileFullPath);
+		
+		/**释放资源*/
+		closeInputStream(is);
+		closeBufferReader(br);
+		destroyProcess(process);
+	}
+	
+	private final String makeOutputStyle(String date, String iow) {
+		return date + "|" + iow  + "\n";
+	}
+	
+	
+	
 	@Override
 	public void stopMonitor() {
 		stopIOWMonitor();
+	}
+	
+	private void closeInputStream(InputStream in) {
+		if(in != null) {
+			try {
+				in.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private void closeBufferReader(BufferedReader br) {
+		if(br != null) {
+			try {
+				br.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private void destroyProcess(Process process) {
+		try {
+			process.destroy();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}	
 	}
 }

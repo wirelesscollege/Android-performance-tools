@@ -55,7 +55,7 @@ public class UcwebCrashHandler implements UncaughtExceptionHandler{
 			public void run(){
 				//如果要在线程里面显示Toast，必须要用Looper
 				Looper.prepare();
-				Toast.makeText(mContext, "抱歉，程序遇到异常，即将退出" + "\n" + "请联系作者：15-C2-3 杨如耀", Toast.LENGTH_LONG).show();
+				Toast.makeText(mContext, "抱歉，程序遇到异常，即将退出" + "\n" + "请联系作者：13-B6-2 杨如耀", Toast.LENGTH_LONG).show();
 				Looper.loop();
 			}
 		}.start();
@@ -86,9 +86,8 @@ public class UcwebCrashHandler implements UncaughtExceptionHandler{
 		String fileName = "crashLog-" + time + "-" + UcwebPhoneInfoUtils.getPhoneModel() + ".log";
 		
 		UcwebFileUtils fileWriter = new UcwebFileUtils(mContext);
-		
 		try {			
-			fileWriter.writeFile(fileName, sb, UcwebFileUtils.FileLocation.SDCARD);
+			fileWriter.writeFile(fileWriter.generateFilePath() + fileName, sb);
 			
 		} catch (Exception e) {
 			Log.e(LOG_TAG, "an error occured while writing file...", e);  

@@ -4,7 +4,9 @@ package com.ucweb.tools.application;
  * @author yangruyao
  */
 
+import com.ucweb.tools.context.UcwebContext;
 import com.ucweb.tools.utils.UcwebCrashHandler;
+
 import android.app.Application;
 
 public class PerformanceToolsApplication extends Application{
@@ -15,9 +17,9 @@ public class PerformanceToolsApplication extends Application{
 		
 		super.onCreate();
 		
+		UcwebContext.getContext(this).init();
 		//use our error handler to handler uncaught exception
-		UcwebCrashHandler handler = UcwebCrashHandler.getInstance();
-		handler.init(getApplicationContext());
+		UcwebCrashHandler.getInstance().init(getApplicationContext());
 		
 	}
 	

@@ -23,36 +23,46 @@ public final class R {
         public static final int logo=0x7f020000;
     }
     public static final class id {
-        public static final int action_settings=0x7f090011;
-        public static final int app_name=0x7f090006;
-        public static final int appicon=0x7f090005;
-        public static final int btnBatterMonitor=0x7f090009;
-        public static final int btnCpuMemMonitor=0x7f090008;
-        public static final int btnIOMonitor=0x7f09000a;
-        public static final int btnNetMonitor=0x7f09000b;
-        public static final int btnStartTest=0x7f090000;
-        public static final int btnStopTest=0x7f090001;
-        public static final int btnUpload=0x7f090002;
-        public static final int btnViewUploadRecode=0x7f090003;
-        public static final int date=0x7f090010;
-        public static final int file_path=0x7f09000e;
-        public static final int packge_name=0x7f090007;
-        public static final int radiobutton=0x7f090004;
-        public static final int upload_flag=0x7f09000f;
-        public static final int upload_listview=0x7f09000d;
-        public static final int userDescription=0x7f09000c;
+        public static final int action_settings=0x7f090016;
+        public static final int app_name=0x7f09000a;
+        public static final int appicon=0x7f090009;
+        public static final int btnBatterMonitor=0x7f09000d;
+        public static final int btnCpuMemMonitor=0x7f09000c;
+        public static final int btnDeleteFile=0x7f090003;
+        public static final int btnIOMonitor=0x7f09000e;
+        public static final int btnNetMonitor=0x7f09000f;
+        public static final int btnStartTest=0x7f090004;
+        public static final int btnStopTest=0x7f090005;
+        public static final int btnUpload=0x7f090006;
+        public static final int btnUploadFile=0x7f090002;
+        public static final int btnViewUploadRecode=0x7f090007;
+        public static final int checkBox=0x7f090011;
+        public static final int date=0x7f090015;
+        public static final int file_path=0x7f090012;
+        public static final int packge_name=0x7f09000b;
+        public static final int phone_activity_listView=0x7f090000;
+        public static final int radiobutton=0x7f090008;
+        public static final int upload_activity_listview=0x7f090001;
+        public static final int upload_flag=0x7f090014;
+        public static final int upload_listview=0x7f090013;
+        public static final int userDescription=0x7f090010;
     }
     public static final class layout {
-        public static final int activity_setting=0x7f030000;
-        public static final int main=0x7f030001;
-        public static final int main_activity_listview_item=0x7f030002;
-        public static final int operation_activity=0x7f030003;
-        public static final int upload_recode_activity=0x7f030004;
-        public static final int upload_recode_activity_item=0x7f030005;
+        public static final int activity_phone_info=0x7f030000;
+        public static final int activity_setting=0x7f030001;
+        public static final int activity_upload=0x7f030002;
+        public static final int main=0x7f030003;
+        public static final int main_activity_listview_item=0x7f030004;
+        public static final int operation_activity=0x7f030005;
+        public static final int upload_listview_item=0x7f030006;
+        public static final int upload_recode_activity=0x7f030007;
+        public static final int upload_recode_activity_item=0x7f030008;
     }
     public static final class menu {
         public static final int main=0x7f080000;
-        public static final int setting=0x7f080001;
+        public static final int phone_info=0x7f080001;
+        public static final int setting=0x7f080002;
+        public static final int upload=0x7f080003;
     }
     public static final class string {
         public static final int action_settings=0x7f060001;
@@ -60,7 +70,8 @@ public final class R {
         public static final int batterMonitor=0x7f060009;
         public static final int content=0x7f060002;
         public static final int cpuMemMonitor=0x7f060008;
-        public static final int hello_world=0x7f06000f;
+        public static final int deleteFile=0x7f06000e;
+        public static final int hello_world=0x7f060011;
         public static final int iowMonitor=0x7f06000a;
         public static final int netMonitor=0x7f06000b;
         /**  主界面按钮文字 
@@ -70,11 +81,16 @@ public final class R {
         /**  操作界面按钮文字 
          */
         public static final int title=0x7f060007;
-        public static final int title_activity_setting=0x7f06000e;
+        public static final int title_activity_phone_info=0x7f060012;
+        public static final int title_activity_setting=0x7f060010;
+        public static final int title_activity_upload=0x7f060013;
         public static final int upload=0x7f060005;
         /**  上传界面文字 
          */
-        public static final int upload_activity_title=0x7f06000d;
+        public static final int uploadFile=0x7f06000d;
+        /**  上传记录界面文字 
+         */
+        public static final int upload_activity_title=0x7f06000f;
         public static final int userDescription=0x7f06000c;
         public static final int viewUploadRecode=0x7f060006;
     }

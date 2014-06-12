@@ -45,7 +45,8 @@ public class UploadRecodeActivity extends Activity{
 		mDialog.setCancelable(false);
 		mDialog.show();
 		
-		dbManager = UcwebDBManager.getInstance();		
+		dbManager = UcwebDBManager.getInstance();
+		dbManager.init(getApplicationContext());
 		
 		lv = (ListView) findViewById(R.id.upload_listview);
 			
@@ -138,7 +139,7 @@ public class UploadRecodeActivity extends Activity{
 						data.put("TAG_IS_UPLOADED", "上传状态：上传失败");
 						break;
 						
-					case UploadFlag.UPLOADED:
+					case UploadFlag.UPLOAD_SUCCESS:
 						data.put("TAG_PATH", "文件路径: " + path);
 						data.put("TAG_DATE", "日期: " + date);
 						data.put("TAG_IS_UPLOADED", "上传状态：已上传");

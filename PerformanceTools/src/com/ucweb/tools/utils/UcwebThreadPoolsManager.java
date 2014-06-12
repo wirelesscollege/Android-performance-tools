@@ -29,7 +29,7 @@ public final class UcwebThreadPoolsManager {
 
 	public void init(){
 		Log.d(LOG_TAG, "init thread pool........");
-		mService = Executors.newFixedThreadPool(Config.MAX_POOL_SIZE);
+		mService = Executors.newFixedThreadPool(Config.MAX_THREAD_POOL_SIZE);
 	}
 	
 	public boolean isThreadPoolAlive(){

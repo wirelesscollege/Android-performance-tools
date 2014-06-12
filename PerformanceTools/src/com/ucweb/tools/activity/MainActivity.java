@@ -7,14 +7,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import org.json.JSONException;
+
 import com.ucweb.tools.config.Config;
-import com.ucweb.tools.db.UcwebDBManager;
 import com.ucweb.tools.infobean.AppInfo;
-import com.ucweb.tools.infobean.RecodeInfo;
 import com.ucweb.tools.service.MonitorService;
 import com.ucweb.tools.utils.UcwebAppUtil;
-import com.ucweb.tools.utils.UcwebFileUtils;
-import com.ucweb.tools.utils.UcwebInfoQueue;
+import com.ucweb.tools.utils.UcwebCommonTools.ToastTool;
+import com.ucweb.tools.utils.UcwebJsonUtil;
 import com.ucweb.tools.utils.UcwebNetUtils;
 import com.ucweb.tools.utils.UcwebThreadPoolsManager;
 import com.ucweb.tools.R;
@@ -22,11 +22,12 @@ import com.ucweb.tools.R;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.annotation.SuppressLint;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -42,27 +43,18 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class MainActivity extends ListActivity {
 	//msg tag
 	private static final int MSG_UPDATE_UI = 1;
-	//show tips msg tag
-	private static final int MSG_TAG_SHOW_TIPS = 2;
-	//tips flag, 1 means upload success
-	private static final int UPLOAD_SUCCESS = 1;
-	//tips flag, 2 means no file need to upload
-	private static final int NO_FILE_NEED_TO_UPLOAD = 2;
 	
-	//Log tag
-	private final String LOG_TAG = MainActivity.class.getSimpleName();
+	private static final int MSG_NO_NEW_VERSION = 99;
+	
+	private static final int MSG_NEW_VERSION_FOUND = 999;
 	
 	//thread pool
 	private final UcwebThreadPoolsManager threadPoolManager = UcwebThreadPoolsManager.getThreadPoolManager();
 	private ExecutorService mExecutor;
-	
-	//db manager
-	final UcwebDBManager dbManager = UcwebDBManager.getInstance();
 	
 	//list view item tag
 	private final String TAG_APP_ICON = "AppIcon";	//icon
@@ -70,7 +62,7 @@ public class MainActivity extends ListActivity {
 	private final String TAG_APP_PKGNAME = "AppPackgeName";	//package name
 			
 	private MyAdapter adapter;
-	
+	private ToastTool tt;
 	private final MyHandler mHandler = new MyHandler(this);
 	
 	private Button btnStartTest;
@@ -79,9 +71,6 @@ public class MainActivity extends ListActivity {
 	private Button btnViewUploadRecode;
 		
 	private ProgressDialog mDialog;
-	
-	@SuppressLint("UseSparseArrays")
-	private HashMap<Integer, Integer> stats = new HashMap<Integer, Integer>(1);
 	
 	private String pkgName;
 	
@@ -97,9 +86,9 @@ public class MainActivity extends ListActivity {
 		mDialog.setCancelable(false);
 		mDialog.show();		
 		
+		tt = new ToastTool(MainActivity.this);
 		//init threadpool, init db
 		threadPoolManager.init();
-		dbManager.init(getApplicationContext());
 		mExecutor = threadPoolManager.getExecutorService();	
 		
 		//loading process info and update in UI
@@ -135,13 +124,14 @@ public class MainActivity extends ListActivity {
 		
 		//stop test button
 		btnStopTest = (Button) findViewById(R.id.btnStopTest);
+		final ToastTool toast = new ToastTool(getApplicationContext());
 		btnStopTest.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
 				btnUpload.setEnabled(true);
 				stopService(new Intent(MainActivity.this, MonitorService.class));
-				
+				toast.showLongTips("停止服务成功, 请到上传页面上传测试数据");
 			}
 		});
 		
@@ -152,25 +142,10 @@ public class MainActivity extends ListActivity {
 			
 			@Override
 			public void onClick(View v) {				
-				mExecutor.execute(new Runnable() {
-					
-					@Override
-					public void run() {
-						//upload file
-						List<RecodeInfo> uploadList = upload();
-						//insert data into db
-						Message msg = Message.obtain();
-						msg.what = MSG_TAG_SHOW_TIPS;
-						
-						if (uploadList != null) {
-							notifyDBChange(uploadList);
-							msg.arg1 = UPLOAD_SUCCESS;
-						} else {
-							msg.arg1 = NO_FILE_NEED_TO_UPLOAD;
-						}			
-						MainActivity.this.mHandler.sendMessage(msg);
-					}
-				});
+				Intent intent = new Intent();
+				intent.setClass(MainActivity.this, UploadActivity.class);
+				
+				startActivity(intent);
 			}
 		});
 		
@@ -206,52 +181,12 @@ public class MainActivity extends ListActivity {
 		return dataList;
 	}
 	
-	//upload file
-	private List<RecodeInfo> upload(){
-		//get info queue instance
-		final UcwebInfoQueue infoQueue = UcwebInfoQueue.getInstance();
-		if (infoQueue.isQueueEmpty()) {
-			Log.d(LOG_TAG, "no file need to upload");
-			return null;
-		}
-		
-		List<RecodeInfo> infoList = new ArrayList<RecodeInfo>();			
-		RecodeInfo recodeInfo = infoQueue.getInfo();
-		
-		while (recodeInfo != null) {
-			try {
-				//upload file
-				UcwebNetUtils.uploadFile(Config.UPLOAD_URL, "file", recodeInfo.path);
-				//upload success, update uploadFlag to UPLOADED
-				recodeInfo.uploadFlag = RecodeInfo.UploadFlag.UPLOADED;
-				//delete file
-				UcwebFileUtils.deleteFile(recodeInfo.path);
-				Log.d(LOG_TAG, "upload success");
-			} catch (IOException e) {
-				//occur exception ,upload file failed, and update uploadFlag to UPLOAD_FAILED
-				recodeInfo.uploadFlag = RecodeInfo.UploadFlag.UPLOAD_FAILED;
-			}
-			
-			infoList.add(recodeInfo);
-			
-			recodeInfo = infoQueue.getInfo();
-		}
-		return infoList;
-	}
-	
-	//update DB
-	private void notifyDBChange(List<RecodeInfo> list){
-		//insert recode info into DB
-		for (RecodeInfo recodeInfo : list) {
-			dbManager.insertData(recodeInfo);
-		}
-	}
-	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		
 		menu.add(0, 1, 0, "设置");
-		menu.add(0, 2, 0, "关于");
+		menu.add(0, 2, 0, "手机信息");
+		menu.add(0, 3, 0, "更新");
 		
 		return super.onCreateOptionsMenu(menu);
 	}
@@ -265,14 +200,72 @@ public class MainActivity extends ListActivity {
 			break;
 			
 		case 2:
-			Toast.makeText(getApplicationContext(), "还没有写内容，呵呵！", Toast.LENGTH_LONG).show();
+			startActivity(new Intent(this, PhoneInfoActivity.class));
 			break;
-
+		
+		case 3:
+			onUpdateSelected();
+			break;
+			
 		default:
 			break;
 		}
 		
 		return super.onMenuItemSelected(featureId, item);
+	}
+	
+	private final void onUpdateSelected() {
+		mExecutor.execute(new Runnable() {
+			
+			@Override
+			public void run() {
+				Message msg = Message.obtain();
+
+				try {
+					String retJson = UcwebNetUtils.doGet(Config.UPDATE_URL, null);
+					String serverVersion = UcwebJsonUtil.getTagText(UcwebJsonUtil.getTagText(retJson, "version"), "version");
+					Log.d("asd", retJson);
+					if(isNewVersionRelease(serverVersion)) {
+						msg.what = MSG_NEW_VERSION_FOUND;
+						
+//						String downloadUrl = UcwebJsonUtil.getTagText(retJson, "fileUrl");
+//						
+//						Uri uri = Uri.parse(downloadUrl);
+//						Intent intent = new Intent(Intent.ACTION_VIEW, uri); 
+//						startActivity(intent);		
+					}
+					else {
+						msg.what = MSG_NO_NEW_VERSION;
+					}
+					
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+				
+				mHandler.sendMessage(msg);
+			}
+		});
+
+	}
+	
+	private boolean isNewVersionRelease(String serverVersion){
+		boolean hasNewVersion = false;
+		
+		try {
+			PackageInfo packInfo = getPackageManager().getPackageInfo(getPackageName(),0);
+			String localVersion = packInfo.versionName;
+
+			hasNewVersion = !(localVersion.equals(serverVersion));
+			
+		} catch (NameNotFoundException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return hasNewVersion;
 	}
 	
 	@Override
@@ -292,7 +285,6 @@ public class MainActivity extends ListActivity {
 		if (!mExecutor.isShutdown()) {
 			threadPoolManager.shutdownThreadPool();
 		}
-		dbManager.closeDB();
 	}
 	
 	private static class MyHandler extends Handler{
@@ -306,26 +298,28 @@ public class MainActivity extends ListActivity {
 		public void handleMessage(Message msg){
 			MainActivity activity = mActivity.get();
 			
+			if(activity == null) return;
+			
 			switch (msg.what) {		
 			case MSG_UPDATE_UI:
 				
-				if (activity != null) {					
-					activity.mDialog.dismiss();	
+				activity.mDialog.dismiss();	
 					
-					@SuppressWarnings("unchecked")
-					ArrayList<HashMap<String, Object>> infoList = (ArrayList<HashMap<String, Object>>) msg.obj;
-					activity.adapter = activity.new MyAdapter(activity, infoList);
-					activity.setListAdapter(activity.adapter);
-					}
+				@SuppressWarnings("unchecked")
+				ArrayList<HashMap<String, Object>> infoList = (ArrayList<HashMap<String, Object>>) msg.obj;
+				activity.adapter = activity.new MyAdapter(activity, infoList);
+				activity.setListAdapter(activity.adapter);
+
 				break;
-			
-			case MSG_TAG_SHOW_TIPS:
-				if (msg.arg1 == UPLOAD_SUCCESS) {
-					Toast.makeText(activity.getApplicationContext(), "上传记录成功", Toast.LENGTH_SHORT).show();
-				} else {
-					Toast.makeText(activity.getApplicationContext(), "没有记录需要上传或已经上传", Toast.LENGTH_SHORT).show();
-				}
+				
+			case MSG_NO_NEW_VERSION:
+				activity.tt.showLongTips("当前版本就是最新的");
 				break;
+
+			case MSG_NEW_VERSION_FOUND:
+				activity.tt.showShortTips("检测到新版本");
+				break;
+				
 			default:
 				break;
 			}
@@ -340,6 +334,8 @@ public class MainActivity extends ListActivity {
 		TextView appName;
 		TextView pkgName;
 	}
+	
+	private final HashMap<Integer, Integer> stats = new HashMap<Integer, Integer>(1);
 	
 	class MyAdapter extends BaseAdapter{
 		
@@ -365,12 +361,13 @@ public class MainActivity extends ListActivity {
 		public long getItemId(int position) {
 			return position;
 		}
-
+		
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
-			ViewHolder holder =null;
+			
+			ViewHolder holder = null;
 			if (convertView == null) {
-				
+	
 				holder = new ViewHolder();
 				convertView = mInflater.inflate(R.layout.main_activity_listview_item, null);
 				
@@ -396,9 +393,14 @@ public class MainActivity extends ListActivity {
 	}
 	
 	class UcwebOnItemClickListener implements OnItemClickListener{
+		/**
+		 * 对于Listview来说，Activity OnCreate方法会调用Adapter的getView方法，当前屏幕显示几个Item就调用多少次
+		 * 如果点击了Listview的item，那么系统会对当前屏幕可见的每一个item调用一次getView
+		 * */
 
 		@Override
 		public void onItemClick(AdapterView<?> parent, final View view, int position, long id) {
+			/**必须要先clear，这样保证只有1个RadioButton被选中*/
 			stats.clear();
 			stats.put(position, 100);
 			adapter.notifyDataSetChanged();
@@ -409,7 +411,6 @@ public class MainActivity extends ListActivity {
 			final HashMap<String, Object> item = (HashMap<String, Object>) parent.getAdapter().getItem(position);
 			pkgName = (String) item.get(TAG_APP_PKGNAME);
 			
-			Log.d(LOG_TAG, "get package name: " + pkgName);
 		}
 		
 	}			

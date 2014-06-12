@@ -3,4 +3,7 @@
     <issue id="NewApi">
         <ignore path="src/com/ucweb/tools/utils/UcwebFileUtils.java" />
     </issue>
+    <issue id="UseSparseArrays">
+        <ignore path="src/com/ucweb/tools/activity/MainActivity.java" />
+    </issue>
 </lint>

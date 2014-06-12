@@ -1,14 +1,14 @@
 package com.ucweb.tools.monitorTask;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import android.content.Context;
+import android.util.Log;
 
-import com.ucweb.tools.infobean.RecodeInfo;
-import com.ucweb.tools.utils.UcwebDateUtil;
 import com.ucweb.tools.utils.UcwebFileUtils;
-import com.ucweb.tools.utils.UcwebInfoQueue;
+import com.ucweb.tools.utils.UcwebFileUtils.FileType;
 
 /***
  * 
@@ -17,39 +17,59 @@ import com.ucweb.tools.utils.UcwebInfoQueue;
  */
 
 abstract class AbstractMonitor implements Monitorable{
+	
+	private List<String> mBuffer;
+	private UcwebFileUtils mFileWriter;
 	private Context mContext;
-	private final UcwebInfoQueue recodeInfoQueue;
 	
-	private final SimpleDateFormat sdf;
-	
-	public AbstractMonitor(Context context){
-		mContext = context;
-		recodeInfoQueue = UcwebInfoQueue.getInstance();
-		sdf = UcwebDateUtil.YMDDateFormat.getYMDFormat();
+	AbstractMonitor(Context context) {
+		mContext = context.getApplicationContext();
+		
+		mBuffer = new ArrayList<String>(20);
+		mFileWriter = new UcwebFileUtils(mContext);
 	}
 	
-	/***
-	 * 创建入库记录
-	 * @param fileName
-	 * @return
-	 */
-	protected RecodeInfo createRecode(String fileName){
-		RecodeInfo recodeInfo = new RecodeInfo();
-		
-		recodeInfo.path = new UcwebFileUtils(mContext).autoGenerateFilePath() + fileName;
-		recodeInfo.date = sdf.format(new Date());
-		recodeInfo.uploadFlag = RecodeInfo.UploadFlag.NOT_UPLOAD; 
-		
-		return recodeInfo;
+	protected final String createFileName(FileType monitorType, String pkgName) {
+		return mFileWriter.generateFileName(monitorType, 
+				pkgName == null? "Unknown" : pkgName);
 	}
 	
-	/***
-	 * 添加记录到队列
-	 * @param info
-	 * @return
-	 */
-	protected boolean addInQueue(RecodeInfo info){
-		return recodeInfoQueue.addInfo(info);
+	protected final String createFileFullPath(String filePath, String fileName) {
+		return filePath + fileName;
+	}
+	
+	protected void addInBuffer(String data) {
+		mBuffer.add(data);
+	}
+	
+	protected final void writeFile(String fileFullPath, String data) {
+		try {
+			mFileWriter.writeFile(fileFullPath, data);
+		} catch (IOException e) {
+			Log.e(getLogTag(), e.getMessage());
+		}
+	}
+
+	protected final void writeFileWhenBufferReachMaxCount(String fileFullPath, int maxCount) {
+		if(mBuffer.size() >= maxCount) {
+			try {
+				mFileWriter.writeFile(fileFullPath, mBuffer);
+				mBuffer.clear();
+			} catch (IOException e) {
+				Log.e(getLogTag(), e.getMessage());
+			}
+		}
+	}
+	
+	protected final void flushBufferAndWriteFile(String fileFullPath){
+		if(!mBuffer.isEmpty()) {
+			try {
+				mFileWriter.writeFile(fileFullPath, mBuffer);
+				mBuffer.clear();
+			} catch (IOException e) {
+				Log.e(getLogTag(), e.getMessage());
+			}
+		}
 	}
 	
 	/***

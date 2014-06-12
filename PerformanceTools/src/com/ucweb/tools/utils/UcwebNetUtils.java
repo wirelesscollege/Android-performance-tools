@@ -3,9 +3,8 @@ package com.ucweb.tools.utils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -22,7 +21,6 @@ import org.apache.http.entity.mime.content.ContentBody;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.CoreProtocolPNames;
 import org.apache.http.util.EntityUtils;
 
@@ -81,7 +79,8 @@ public class UcwebNetUtils {
 	
     public static String doGet(String baseUrl, List<NameValuePair> params) throws IOException{
     	HttpClient httpClient = new DefaultHttpClient();
-    	HttpGet httpGet = new HttpGet(getCompletedUrl(baseUrl, params));
+    	final String url = (params != null && !params.isEmpty()? getCompletedUrl(baseUrl, params) : baseUrl);
+    	HttpGet httpGet = new HttpGet(url);
     	
     	ResponseHandler<String> handler = new BasicResponseHandler();
     	try {
@@ -92,25 +91,11 @@ public class UcwebNetUtils {
     	} 	
     }
     
-    public static String doGet(String baseUrl, Map<String, String> params) throws IOException{
-    	List<NameValuePair> paramList = convertMap2List(params);
-    	return doGet(baseUrl, paramList);
-    }
-    
     private static String getCompletedUrl(String baseUrl, List<NameValuePair> params) throws IOException{
     	if (!baseUrl.endsWith("?")) {
 			baseUrl = baseUrl + "?";
 		}
     	return baseUrl + EntityUtils.toString(new UrlEncodedFormEntity(params));
     }
-    
-    private static List<NameValuePair> convertMap2List(Map<String, String> params){
-    	if (params.isEmpty())
-    		return null;
-    	List<NameValuePair> paramList = new ArrayList<NameValuePair>();
-    	for (Map.Entry<String, String> entry : params.entrySet()) {
-			paramList.add(new BasicNameValuePair(entry.getKey().trim(), entry.getValue().trim()));
-		}
-    	return paramList;
-    }
+ 
 }

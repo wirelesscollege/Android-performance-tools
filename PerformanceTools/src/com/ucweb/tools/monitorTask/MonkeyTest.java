@@ -133,11 +133,9 @@ public class MonkeyTest implements Runnable{
 		try {
 			String json = UcwebNetUtils.doGet(url, param);
 			
-			UcwebJsonUtil jsonUtil = new UcwebJsonUtil();
-			jsonUtil.init(json);
-			int retCode = (Integer) jsonUtil.getTagText("code");
+			int retCode = Integer.parseInt(UcwebJsonUtil.getTagText(json, "code"));
 			if (retCode == 0)
-				return (String) jsonUtil.getTagText("msg");
+				return UcwebJsonUtil.getTagText(json, "msg");
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -151,8 +149,9 @@ public class MonkeyTest implements Runnable{
 	
 	private void writeScriptToFile(String fileName, String scriptMsg) {
 		UcwebFileUtils fileWriter = new UcwebFileUtils(context);
+		final String fileSavePath = fileWriter.generateFilePath();
 		try {
-			fileWriter.writeFile(fileName, scriptMsg, UcwebFileUtils.FileLocation.SDCARD);
+			fileWriter.writeFile(fileSavePath + fileName, scriptMsg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

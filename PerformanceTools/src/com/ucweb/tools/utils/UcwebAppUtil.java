@@ -345,20 +345,23 @@ public class UcwebAppUtil {
 	 * 						index 2 is send bytes in kb; else return null
 	 * 
 	 * */
-	public int[] getAppTraffic(int uid){
+	public long[] getAppTraffic(int uid){
 		long receiveBytes = TrafficStats.getUidRxBytes(uid);
 		//bytes send
 		long sendBytes = TrafficStats.getUidTxBytes(uid);
 		
-		if (receiveBytes < 0 || sendBytes < 0) {
+		if (receiveBytes < 0L || sendBytes < 0L) {
 			//android version below 2.2, can not support TrafficStats API
 			return null;
 		}
 		
 		long totalBytes = receiveBytes + sendBytes;
-		int[] trafficArray = new int[]{(int) (totalBytes >>> 10), (int) (receiveBytes >>> 10), (int) (sendBytes >>> 10)};
 		
-		return trafficArray;
+		return new long[]{
+				/*(int) (totalBytes >>> 10)*/ 		totalBytes ,
+				/*(int) (receiveBytes >>> 10)*/ 	receiveBytes, 
+				/*(int) (sendBytes >>> 10)*/		sendBytes
+				};
 	}
 	
 }

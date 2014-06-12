@@ -9,7 +9,7 @@ public class RecodeInfo {
 	public static class UploadFlag{
 		/**
 		 * have upload file*/
-		public static final int UPLOADED = 1;		
+		public static final int UPLOAD_SUCCESS = 1;		
 		/**
 		 * not upload file*/
 		public static final int NOT_UPLOAD = 2;

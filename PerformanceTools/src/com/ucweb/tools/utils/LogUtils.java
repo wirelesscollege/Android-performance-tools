@@ -3,26 +3,26 @@ package com.ucweb.tools.utils;
 import android.util.Log;
 
 public class LogUtils {
-	private boolean isShutDownLogCat;
+	private boolean isShutDownLog = false;
 	
-	public LogUtils(boolean printLog) {
-		isShutDownLogCat = printLog;
+	public void setWriteLogOff(boolean flag) {
+		isShutDownLog = flag;
 	}
 	
 	public void printDebugLog(String tag, String msg) {
-		if (isShutDownLogCat) {
+		if (!isShutDownLog) {
 			Log.d(tag, msg);
 		}
 	}
 	
 	public void printVerboseLog(String tag, String msg) {
-		if (isShutDownLogCat) {
+		if (isShutDownLog) {
 			Log.v(tag, msg);
 		}
 	}
 	
 	public void printErrorLog(String tag, String msg) {
-		if (isShutDownLogCat) {
+		if (isShutDownLog) {
 			Log.e(tag, msg);
 		}
 	}

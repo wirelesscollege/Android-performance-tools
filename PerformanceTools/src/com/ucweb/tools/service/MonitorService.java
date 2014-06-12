@@ -40,12 +40,16 @@ public class MonitorService extends Service{
 	public void onStart(Intent intent, int startId) {	
 		final int flag = intent.getIntExtra("flag", -1);
 		final String pkgName = intent.getStringExtra("pkgName");
+		final String fileSavePath = intent.getStringExtra("file path");
 		
 		switch (flag) {	
 		
 		case MonitorType.MONITOR_TYPE_CPUMEM:
 			CpuMemMonitor cpuMemMonitor = new CpuMemMonitor.Builder(getApplicationContext()).
-														setMonitorIntervalSeconds(5).setMonitorPkg(pkgName).build();
+														setMonitorIntervalSeconds(5).
+														setMonitorPkg(pkgName).
+														setFileSavePath(fileSavePath).
+														build();
 			mProxy = new MonitorProxy(cpuMemMonitor);
 			executor.execute(new Runnable() {
 				
@@ -57,13 +61,13 @@ public class MonitorService extends Service{
 			break;
 		
 		case MonitorType.MONITOR_TYPE_BATTER:
-			BatterMonitor bm = new BatterMonitor(getApplicationContext(), pkgName);
+			BatterMonitor bm = new BatterMonitor(getApplicationContext(), fileSavePath, pkgName);
 			mProxy = new MonitorProxy(bm);
 			mProxy.start();
 			break;
 			
 		case MonitorType.MONITOR_TYPE_IOW:
-			IOWMonitor iowMonitor = new IOWMonitor(getApplicationContext(), pkgName, cmds);
+			IOWMonitor iowMonitor = new IOWMonitor(getApplicationContext(), fileSavePath, pkgName, cmds);
 			mProxy = new MonitorProxy(iowMonitor);
 			executor.execute(new Runnable() {
 				
@@ -75,7 +79,7 @@ public class MonitorService extends Service{
 			break;
 			
 		case MonitorType.MONITOR_TYPE_NET:
-			NetMonitor netMonitor = new NetMonitor(getApplicationContext(), pkgName);
+			NetMonitor netMonitor = new NetMonitor(getApplicationContext(), fileSavePath, pkgName);
 			mProxy = new MonitorProxy(netMonitor);
 			executor.execute(new Runnable() {
 				
